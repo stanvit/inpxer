@@ -44,7 +44,7 @@ func Run(cfg *config.MyConfig, filename string, keepDeleted, partial bool) error
 		log.Printf("Error opening or creating index: %s", cfg.IndexPath)
 		return cli.Exit(err.Error(), 1)
 	}
-	defer idx.Close()
+	defer func() { _ = idx.Close() }()
 
 	sm := ysmrr.NewSpinnerManager(
 		ysmrr.WithAnimation(animations.Dots),

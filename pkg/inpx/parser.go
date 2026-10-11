@@ -173,7 +173,7 @@ func (p *Parser) parse() {
 			}
 
 			if err != nil && err != io.EOF {
-				rc.Close()
+				_ = rc.Close()
 				p.err = err
 				return
 			}
@@ -182,7 +182,7 @@ func (p *Parser) parse() {
 			values := bytes.Split(line, []byte{0x04})
 			book, err := mapFieldsToBook(p.structure, values[:len(values)-1])
 			if err != nil {
-				rc.Close()
+				_ = rc.Close()
 				p.err = err
 				return
 			}
@@ -190,7 +190,7 @@ func (p *Parser) parse() {
 			book.File.Archive = archive
 			p.bookCh <- book
 		}
-		rc.Close()
+		_ = rc.Close()
 	}
 }
 
@@ -290,7 +290,7 @@ func (p *Parser) readVersion() error {
 	if err != nil {
 		return fmt.Errorf("version.info not found: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	br := bufio.NewReader(r)
 	p.Version, err = readCleanString(br)
@@ -307,7 +307,7 @@ func (p *Parser) readCollection() error {
 	if err != nil {
 		return fmt.Errorf("collection.info not found: %v", err)
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	br := bufio.NewReader(r)
 	p.Name, err = readCleanString(br)
@@ -336,7 +336,7 @@ func (p *Parser) getStructure() []field {
 	if err != nil {
 		return defaultStructure
 	}
-	defer r.Close()
+	defer func() { _ = r.Close() }()
 
 	br := bufio.NewReader(r)
 	ssv, err := readCleanString(br)

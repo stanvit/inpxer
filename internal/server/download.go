@@ -43,7 +43,7 @@ func (h *DownloadHandler) Download(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	defer index.Close()
+	defer func() { _ = index.Close() }()
 
 	book, err := index.GetBookById(id)
 	if err != nil {
@@ -102,7 +102,7 @@ func (h *DownloadHandler) DownloadConverted(w http.ResponseWriter, r *http.Reque
 		internalServerError(w)
 		return
 	}
-	defer index.Close()
+	defer func() { _ = index.Close() }()
 
 	book, err := index.GetBookById(id)
 	if err != nil {
@@ -145,7 +145,7 @@ func (h *DownloadHandler) DownloadConverted(w http.ResponseWriter, r *http.Reque
 		}
 
 		filename = f.Name()
-		defer os.Remove(filename)
+		defer func() { _ = os.Remove(filename) }()
 	} else {
 		filename, err = h.getDirectFilePath(book)
 		if err != nil {
@@ -161,9 +161,9 @@ func (h *DownloadHandler) DownloadConverted(w http.ResponseWriter, r *http.Reque
 		outFilename = filepath.Join(outDir, strings.TrimSuffix(baseFilename, filepath.Ext(baseFilename))+"."+converter.To)
 	}
 
-	args := strings.Replace(converter.Arguments, "{from}", filename, -1)
-	args = strings.Replace(args, "{to}", outFilename, -1)
-	args = strings.Replace(args, "{to_dir}", outDir, -1)
+	args := strings.ReplaceAll(converter.Arguments, "{from}", filename)
+	args = strings.ReplaceAll(args, "{to}", outFilename)
+	args = strings.ReplaceAll(args, "{to_dir}", outDir)
 	cmd := exec.Command(converter.Command, strings.Split(args, " ")...)
 
 	log.Printf("Waiting for converter to finish. %s %s", converter.Command, args)
@@ -172,7 +172,7 @@ func (h *DownloadHandler) DownloadConverted(w http.ResponseWriter, r *http.Reque
 		notFound(w, id)
 		return
 	}
-	defer os.Remove(outFilename)
+	defer func() { _ = os.Remove(outFilename) }()
 
 	log.Printf("Serving converted file from: %s", outFilename)
 	addFilenameToHeader(w, book.Title, book.LibId+"."+converter.To)

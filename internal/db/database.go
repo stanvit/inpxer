@@ -80,7 +80,7 @@ func openStorage(storage string, path string) (storer.BookStorer, error) {
 func (s *Store) Close() error {
 	err := s.fts.Close()
 	if err != nil {
-		s.db.Close()
+		_ = s.db.Close()
 		return err
 	}
 	return s.db.Close()

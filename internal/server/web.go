@@ -95,7 +95,7 @@ func (h *WebHandler) Search(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	defer index.Close()
+	defer func() { _ = index.Close() }()
 
 	top, err := index.SearchByField(field, q, page, PageSize)
 	if err != nil {

@@ -54,13 +54,13 @@ func (h *OpdsHandler) Root(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	defer index.Close()
+	defer func() { _ = index.Close() }()
 
 	books, err := index.GetMostRecentBooks(PageSize)
 	if err != nil {
 		log.Printf("Error retrieving recent books: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Internal server error")
+		_, _ = fmt.Fprintln(w, "Internal server error")
 		return
 	}
 
@@ -87,13 +87,13 @@ func (h *OpdsHandler) Search(w http.ResponseWriter, r *http.Request) {
 		internalServerError(w)
 		return
 	}
-	defer index.Close()
+	defer func() { _ = index.Close() }()
 
 	top, err := index.SearchByField(field, q, page, PageSize)
 	if err != nil {
 		log.Printf("Error searching: %v", err)
 		w.WriteHeader(http.StatusInternalServerError)
-		fmt.Fprintln(w, "Internal server error")
+		_, _ = fmt.Fprintln(w, "Internal server error")
 		return
 	}
 
