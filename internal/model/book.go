@@ -3,6 +3,7 @@ package model
 import (
 	"fmt"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -90,16 +91,27 @@ func (b *Book) PublishedAt() string {
 	return b.PubDate.Format("2006-01-02")
 }
 
-func (f *File) IsArchived() bool {
-	return f.Folder == "" || strings.HasSuffix(f.Folder, ".zip")
+var archiveExts = []string{".zip", ".7z"}
+
+func hasArchiveExt(name string) bool {
+	return slices.ContainsFunc(archiveExts, func(ext string) bool { return strings.HasSuffix(name, ext) })
 }
 
-func (f *File) ArchivePath() string {
-	if strings.HasSuffix(f.Folder, ".zip") {
-		return f.Folder
+func (f *File) IsArchived() bool {
+	return f.Folder == "" || hasArchiveExt(f.Folder)
+}
+
+// ArchivePaths lists candidate archive locations; repacked collections keep the .inp names but change the extension.
+func (f *File) ArchivePaths() []string {
+	if hasArchiveExt(f.Folder) {
+		return []string{f.Folder}
 	}
 
-	return fmt.Sprintf("%s.zip", f.Archive)
+	paths := make([]string, 0, len(archiveExts))
+	for _, ext := range archiveExts {
+		paths = append(paths, f.Archive+ext)
+	}
+	return paths
 }
 
 func (a Author) String() string {

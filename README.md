@@ -2,6 +2,18 @@
 
 OPDS 1.1 and web server for `.inpx` libraries with full-text search.
 
+## Fork changes
+
+This is a fork of [shemanaev/inpxer](https://github.com/shemanaev/inpxer). Differences from upstream:
+
+- Book archives can be `.7z` as well as `.zip`; the format is detected from the file signature.
+  If the inpx doesn't name the archive, `<inp name>.zip` is tried first, then `<inp name>.7z`.
+- Built with Go 1.27 (pinned in `.tool-versions`).
+- Pushing a `v*` tag publishes a GitHub release and a `linux/amd64` image to `ghcr.io/stanvit/inpxer`.
+
+Reading from solid 7z archives means decompressing everything before the book in its solid block,
+so downloads from large solid blocks can be slow.
+
 ## Usage
 
 ### Standalone
@@ -33,12 +45,12 @@ inpxer expects config file to be at `/data/inpxer.toml`.
 
 Import data:
 ```shell
-docker run --rm -it -v ${PWD}:/import -v <path to data storage>:/data shemanaev/inpxer inpxer import /import/file.inpx
+docker run --rm -it -v ${PWD}:/import -v <path to data storage>:/data ghcr.io/stanvit/inpxer inpxer import /import/file.inpx
 ```
 
 *Note: existing index will be deleted.*
 
 Start server:
 ```shell
-docker run -it -p 8080:8080 -v <path to data storage>:/data shemanaev/inpxer
+docker run -it -p 8080:8080 -v <path to data storage>:/data ghcr.io/stanvit/inpxer
 ```

@@ -5,7 +5,7 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io"
+	"io/fs"
 	"log"
 	"net/http"
 	"net/url"
@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/bodgit/sevenzip"
 	"github.com/essentialkaos/translit/v2"
 	"github.com/go-chi/chi/v5"
 
@@ -189,37 +190,62 @@ func (h *DownloadHandler) getDirectFilePath(book *model.Book) (string, error) {
 }
 
 func (h *DownloadHandler) getFileFromArchive(book *model.Book) ([]byte, error) {
-	archivePath := filepath.Join(h.cfg.LibraryPath, book.File.ArchivePath())
-	zf, err := zip.OpenReader(archivePath)
+	var archivePath string
+	for _, p := range book.File.ArchivePaths() {
+		archivePath = filepath.Join(h.cfg.LibraryPath, filepath.FromSlash(p))
+		if _, err := os.Stat(archivePath); err == nil {
+			break
+		}
+	}
+
+	f, err := os.Open(archivePath)
 	if err != nil {
 		log.Printf("Can't open archive `%s` (id: %s) not found: %v", archivePath, book.LibId, err)
 		return nil, err
 	}
-	defer zf.Close()
+	defer func() { _ = f.Close() }()
 
-	bookName := fmt.Sprintf("%s.%s", book.File.Name, book.File.Ext)
-	for _, file := range zf.File {
-		if file.Name == bookName {
-			content, err := file.Open()
-			if err != nil {
-				log.Printf("Can't open file `%s` in archive `%s` (id: %s) not found: %v", bookName, archivePath, book.LibId, err)
-				return nil, err
-			}
-
-			data, err := io.ReadAll(content)
-			if err != nil {
-				log.Printf("Can't read file `%s` in archive `%s` (id: %s) not found: %v", bookName, archivePath, book.LibId, err)
-				content.Close()
-				return nil, err
-			}
-			content.Close()
-
-			return data, nil
-		}
+	fsys, err := openArchive(f)
+	if err != nil {
+		log.Printf("Can't read archive `%s` (id: %s): %v", archivePath, book.LibId, err)
+		return nil, err
 	}
 
-	log.Printf("File `%s` not found in archive `%s` (id: %s)", bookName, archivePath, book.LibId)
-	return nil, os.ErrNotExist
+	bookName := fmt.Sprintf("%s.%s", book.File.Name, book.File.Ext)
+	data, err := fs.ReadFile(fsys, bookName)
+	if err != nil {
+		log.Printf("Can't read file `%s` in archive `%s` (id: %s): %v", bookName, archivePath, book.LibId, err)
+		return nil, err
+	}
+
+	return data, nil
+}
+
+var (
+	zipMagic      = []byte("PK\x03\x04")
+	sevenZipMagic = []byte("7z\xBC\xAF\x27\x1C")
+)
+
+// openArchive picks the reader by file signature, so an archive opens regardless of its extension.
+func openArchive(f *os.File) (fs.FS, error) {
+	info, err := f.Stat()
+	if err != nil {
+		return nil, err
+	}
+
+	header := make([]byte, len(sevenZipMagic))
+	if _, err := f.ReadAt(header, 0); err != nil {
+		return nil, err
+	}
+
+	switch {
+	case bytes.HasPrefix(header, zipMagic):
+		return zip.NewReader(f, info.Size())
+	case bytes.HasPrefix(header, sevenZipMagic):
+		return sevenzip.NewReader(f, info.Size())
+	default:
+		return nil, errors.New("unsupported archive format")
+	}
 }
 
 func addFilenameToHeader(w http.ResponseWriter, title string, filename string) {
