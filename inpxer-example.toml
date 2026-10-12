@@ -20,6 +20,12 @@ full_url = "http://localhost:8080"
 # storage backend. possible values: bolt, badger. default: badger. might be usefult for 32 bit systems
 # storage = "bolt"
 
+# enables POST /reload, which rebuilds the index from inpx_path and swaps it in without downtime.
+# requests must send "Authorization: Bearer <reload_token>". the index is rebuilt in index_path + ".new",
+# so index_path must not be a mount point and needs room for a second copy
+# reload_token = ""
+# inpx_path = "/data/library/collection.inpx"
+
 # format converters. can be as many as you want
 #[[converters]]
 ## source file extension

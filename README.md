@@ -8,6 +8,7 @@ This is a fork of [shemanaev/inpxer](https://github.com/shemanaev/inpxer). Diffe
 
 - Book archives can be `.7z` as well as `.zip`; the format is detected from the file signature.
   If the inpx doesn't name the archive, `<inp name>.zip` is tried first, then `<inp name>.7z`.
+- Optional `POST /reload` endpoint that rebuilds the index without downtime (see [Reloading the index](#reloading-the-index)).
 - Built with Go 1.27 (pinned in `.tool-versions`).
 - Pushing a `v*` tag publishes a GitHub release and `linux/amd64` images to
   [`ghcr.io/stanvit/inpxer`](https://github.com/stanvit/inpxer/pkgs/container/inpxer) in two flavours (see [Docker](#docker)).
@@ -37,6 +38,18 @@ Start server:
 
 Web interface will be available on [http://localhost:8080/](http://localhost:8080/) and
 OPDS will be on [http://localhost:8080/opds](http://localhost:8080/opds) by default.
+
+### Reloading the index
+
+Setting `reload_token` and `inpx_path` in `inpxer.toml` enables `POST /reload`.
+It imports `inpx_path` into `<index_path>.new` in the background, then swaps it with the live index; requests are served from the old index until the swap.
+The endpoint answers `202` when a reload starts, `409` while one is running and `401` without the token. Progress and errors go to the server log.
+
+```shell
+curl -fsS -X POST -H "Authorization: Bearer $RELOAD_TOKEN" http://localhost:8080/reload
+```
+
+This fits a torrent client's "download completed" hook, so the index follows collection updates.
 
 ### Docker
 

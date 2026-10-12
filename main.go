@@ -51,6 +51,10 @@ func main() {
 						Name:  "partial",
 						Usage: "Only add new records, never delete",
 					},
+					&cli.StringFlag{
+						Name:  "index-path",
+						Usage: "Build the index here instead of index_path from config",
+					},
 				},
 			},
 		},
@@ -67,6 +71,9 @@ func main() {
 
 func importAction(ctx *cli.Context) error {
 	cfg := ctx.Context.Value(contextConfig).(*config.MyConfig)
+	if indexPath := ctx.String("index-path"); indexPath != "" {
+		cfg.IndexPath = indexPath
+	}
 	fmt.Println("Starting import from:", ctx.Args().First())
 	return indexer.Run(cfg, ctx.Args().First(), ctx.Bool("keep-deleted"), ctx.Bool("partial"))
 }

@@ -20,6 +20,8 @@ type MyConfig struct {
 	Listen           string       `toml:"listen"`
 	FullUrl          string       `toml:"full_url"`
 	Converters       []*Converter `toml:"converters"`
+	ReloadToken      string       `toml:"reload_token"`
+	InpxPath         string       `toml:"inpx_path"`
 }
 
 type Converter struct {

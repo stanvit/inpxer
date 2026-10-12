@@ -38,6 +38,7 @@ func Run(cfg *config.MyConfig, isDevMode bool, version string) error {
 	r.Use(middleware.StripSlashes)
 	r.Use(middleware.Compress(5, "application/fb2"))
 	r.Use(middleware.SetHeader("Server", "inpxer/"+version))
+	r.Use(holdIndexLock)
 
 	t, err := i18n.GetLocalizer(cfg.Language)
 	if err != nil {
@@ -72,6 +73,14 @@ func Run(cfg *config.MyConfig, isDevMode bool, version string) error {
 		r.Get("/", opds.Root)
 		r.Get("/search", opds.Search)
 	})
+
+	if cfg.ReloadToken != "" {
+		if cfg.InpxPath == "" {
+			return cli.Exit("inpx_path is required when reload_token is set", 1)
+		}
+		reload := NewReloadHandler(cfg)
+		r.Post("/reload", reload.Reload)
+	}
 
 	err = http.ListenAndServe(cfg.Listen, r)
 	if err != nil {
