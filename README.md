@@ -9,7 +9,8 @@ This is a fork of [shemanaev/inpxer](https://github.com/shemanaev/inpxer). Diffe
 - Book archives can be `.7z` as well as `.zip`; the format is detected from the file signature.
   If the inpx doesn't name the archive, `<inp name>.zip` is tried first, then `<inp name>.7z`.
 - Built with Go 1.27 (pinned in `.tool-versions`).
-- Pushing a `v*` tag publishes a GitHub release and a `linux/amd64` image to `ghcr.io/stanvit/inpxer`.
+- Pushing a `v*` tag publishes a GitHub release and `linux/amd64` images to
+  [`ghcr.io/stanvit/inpxer`](https://github.com/stanvit/inpxer/pkgs/container/inpxer) in two flavours (see [Docker](#docker)).
 
 Reading from solid 7z archives means decompressing everything before the book in its solid block,
 so downloads from large solid blocks can be slow.
@@ -38,6 +39,24 @@ Web interface will be available on [http://localhost:8080/](http://localhost:808
 OPDS will be on [http://localhost:8080/opds](http://localhost:8080/opds) by default.
 
 ### Docker
+
+Images are published to [`ghcr.io/stanvit/inpxer`](https://github.com/stanvit/inpxer/pkgs/container/inpxer) in two flavours:
+
+| Flavour | Tags | Contents |
+|---|---|---|
+| plain | `latest`, `0.4`, `0.4.2` | inpxer only |
+| fbc | `latest-fbc`, `0.4-fbc`, `0.4.2-fbc` | inpxer and the [fb2cng](https://github.com/rupor-github/fb2cng) converter at `/bin/fbc` ([GPL-3.0](https://github.com/rupor-github/fb2cng/blob/main/LICENSE)) |
+
+To offer fb2 to epub conversion with the fbc flavour, add to `inpxer.toml`:
+```toml
+[[converters]]
+from = "fb2"
+to = "epub"
+command = "/bin/fbc"
+arguments = "convert --to epub2 -o {to} {from}"
+```
+
+Locally, `docker build --target fbc .` builds the fbc flavour; the default target is plain.
 
 Download [`inpxer-example.toml`](./inpxer-example.toml), rename to `inpxer.toml` and edit to your liking.
 

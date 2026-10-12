@@ -30,3 +30,10 @@ full_url = "http://localhost:8080"
 #command = "fb2epub"
 ## converter arguments. {from} becomes source file path, {to} - output file path, {to_dir} - output directory (for fb2converter)
 #arguments = "{from} {to}"
+
+# fb2cng, bundled in the -fbc image flavour: https://github.com/rupor-github/fb2cng
+#[[converters]]
+#from = "fb2"
+#to = "epub"
+#command = "/bin/fbc"
+#arguments = "convert --to epub2 -o {to} {from}"
